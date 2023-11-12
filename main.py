@@ -1,14 +1,24 @@
-from typing import Optional
+from fastapi import FastAPI, HTTPException, status
+from pydantic import BaseModel
+from typing import List
+import uvicorn
 
-from fastapi import FastAPI
+from utils import orderMealPlans
 
 app = FastAPI()
 
+class Item(BaseModel):
+    string: str
+    array: List[List[int]]
 
-@app.get("/")
-async def root():
-    return {"message": "Hello World"}
+@app.post("/getOrderMealPlans/", status_code=status.HTTP_201_CREATED)
+async def process_item(item: Item):
+    try:
+        # The endpoint simply returns the array from the JSON payload
 
-@app.get("/items/{item_id}")
-def read_item(item_id: int, q: Optional[str] = None):
-    return {"item_id": item_id, "q": q}
+        res = orderMealPlans(item.string, item.array)
+
+        return {"generatedMeals": res}
+    except Exception as e:
+        # If something goes wrong, return an HTTP 400 error
+        raise HTTPException(status_code=400, detail=str(e))
